@@ -14,13 +14,13 @@ mfile <- mfile[is.na(mfile$qaqc_level_id), ]
 # select out relevant columns (scalar speed and direction averages).
 mfile <- select(mfile, data.id = did, datetime, deployment.id = deployment_id, pm10.avg = teom, 
                 wd.avg = dir, ws.avg = aspd)
-df1 <- rbind(teom_df, mfile)
+teom_data <- rbind(teom_df, mfile)
+teom_data <- filter(teom_data, deployment.id!=8)
 
-deploys <- as.character(unique(df1$deployment.id))
+deploys <- as.character(unique(teom_data$deployment.id))
 deploys <- paste(deploys, collapse=", ")
 deploys <- paste0("(", deploys, ")")
-locs_df <- query_owenslake(paste0("SELECT deployment_id, deployment, northing_utm, easting_utm, description FROM instruments.deployments WHERE deployment_id IN ", deploys))
-colnames(locs_df) <- gsub("_", ".", colnames(locs_df))
-df2 <- inner_join(teom_df, locs_df, by="deployment.id")
-df2 <- filter(df2, deployment.id!=8)
+teom_locs <- query_owenslake(paste0("SELECT deployment_id, deployment, northing_utm, easting_utm, description FROM instruments.deployments WHERE deployment_id IN ", deploys))
+colnames(teom_locs) <- gsub("_", ".", colnames(teom_locs))
 
+save(teom_data, teom_locs, file="./data-clean/teom_data.RData")
