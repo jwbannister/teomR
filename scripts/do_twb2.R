@@ -1,4 +1,4 @@
-# explore.R -- Initial work on paired teoms for upwind/downwind PM10
+# explore.R -- Initial work on paired teoms for upwind/downwind PM11
 # John Bannister
 # Created 01/14/2016 -- see git for revision history
 # 
@@ -37,16 +37,26 @@ joined_events <- inner_join(events, teom_data, b=c("datetime", "dca.group")) %>%
                  filter(wd.avg.y < wd.avg.x + 11.25 & wd.avg.y > wd.avg.x - 11.25)
 
 clean_events <- joined_events %>% 
+                group_by(data.id.x) %>%
                 mutate(avg.ws = mean(c(ws.avg.x, ws.avg.y)),
                        dir = position.x) %>%
+                ungroup() %>%
                 select(datetime, dca.group, avg.ws, dir, pm10.uw = pm10.avg.x, 
                        teom.uw = deployment.id.x, pm10.dw = pm10.avg.y, 
                        teom.dw = deployment.id.y) %>%
                 mutate(pm10.delta = pm10.dw - pm10.uw)
 
-clean_events %>% group_by(dca.group, dir) %>% summarize(mean.pm10.uw = mean(pm10.uw),
+summ <- clean_events %>% group_by(dca.group, dir) %>% summarize(mean.pm10.uw = mean(pm10.uw),
                                                    mean.pm10.dw = mean(pm10.dw),
                                                    mean.pm10.delta = mean(pm10.delta),
                                                    n = length(pm10.uw))
 
+p_nn <- ggplot(filter(clean_events, dca.group=="north", dir=="N"), aes(x=pm10.delta))+
+  geom_density()
+p_ns <- ggplot(filter(clean_events, dca.group=="north", dir=="S"), aes(x=pm10.delta))+
+  geom_density()
+p_sn <- ggplot(filter(clean_events, dca.group=="south", dir=="N"), aes(x=pm10.delta))+
+  geom_density()
+p_ss <- ggplot(filter(clean_events, dca.group=="south", dir=="S"), aes(x=pm10.delta))+
+  geom_density()
 
