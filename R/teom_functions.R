@@ -32,13 +32,44 @@ pair_teoms <- function(df1){
     mutate(alpha = ifelse(alpha>0, alpha, 2*pi+alpha)) %>%
     mutate(upwind.angle = ifelse(position=="S", alpha, alpha-pi)) %>%
     select(-alpha)
-  df1$upwind.angle <- ifelse(deg(df1$upwind.angle)>0, deg(df1$upwind.angle), 
-                             360 + deg(df1$upwind.angle)) 
+  df1$upwind.angle <- ifelse(circular::deg(df1$upwind.angle)>0, circular::deg(df1$upwind.angle), 
+                             360 + circular::deg(df1$upwind.angle)) 
   df1$upwind.angle <- round(df1$upwind.angle, 1)
   df1 <- ungroup(df1)
   df1
 }
 
-
+#' Pair up teoms for upwind/downwind analysis
+#' 
+#' This function is specific to pairing teoms in control areas for
+#' upwind/downwind analysis.
+#' 
+#' @import magrittr
+#' @param df1 Data frame. Teoms under consideration.
+#' @return Input data frame with added column listing relevant DCA for paired 
+#' TEOMS. 
+pair_teoms_control <- function(df1){
+  df1$dca.group <- rep(NA, nrow(df1))
+  for (i in 1:nrow(df1)){
+    if (df1$deployment[i] == "Olancha" | df1$deployment[i] == "T2-1"){
+      df1$dca.group[i] <- "south_control"
+    }
+    if (df1$deployment[i] == "North Beach" | df1$deployment[i] == "T29-4N"){
+      df1$dca.group[i] <- "north_control"
+    }
+  }
+  df1 <- group_by(df1, dca.group) %>% 
+    mutate(position = ifelse(northing.utm==max(northing.utm), "N", "S")) %>%
+    arrange(desc(position)) %>%
+    mutate(alpha = atan(diff(easting.utm)/diff(northing.utm))) %>%
+    mutate(alpha = ifelse(alpha>0, alpha, 2*pi+alpha)) %>%
+    mutate(upwind.angle = ifelse(position=="S", alpha, alpha-pi)) %>%
+    select(-alpha)
+  df1$upwind.angle <- ifelse(circular::deg(df1$upwind.angle)>0, circular::deg(df1$upwind.angle), 
+                             360 + circular::deg(df1$upwind.angle)) 
+  df1$upwind.angle <- round(df1$upwind.angle, 1)
+  df1 <- ungroup(df1)
+  df1
+}
 
 

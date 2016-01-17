@@ -9,7 +9,7 @@ teom_df <- teom_df[teom_df$qaqc_level_id==0, ]
 teom_df <- select(teom_df, data.id = teom_summary_data_id, datetime, deployment.id = deployment_id,
                   pm10.avg = pm10_avg, wd.avg = wd, ws.avg = ws)
 
-mfile <- query_owenslake("SELECT * FROM archive.mfile_data WHERE datetime > timestamp '2015-12-01 00:00:00' AND datetime < timestamp '2016-01-01 00:00:00' AND site = 'T7'")
+mfile <- query_owenslake("SELECT * FROM archive.mfile_data WHERE datetime > timestamp '2015-12-01 00:00:00' AND datetime < timestamp '2016-01-01 00:00:00' AND (site = 'T7' OR site = 'Olancha' OR site = 'NorthBch')")
 mfile <- mfile[is.na(mfile$qaqc_level_id), ]
 # select out relevant columns (scalar speed and direction averages).
 mfile <- select(mfile, data.id = did, datetime, deployment.id = deployment_id, pm10.avg = teom, 
