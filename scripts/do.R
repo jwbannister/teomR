@@ -17,33 +17,33 @@ df1 <- inner_join(teom_data, select(teom_locs, deployment.id, deployment,
 
 events <- define_event(df1, teom_locs)
 
-joined_events <- inner_join(events, df1, b=c("datetime", "dca.group")) %>%
-                 filter(deployment.id.x!=deployment.id.y) %>%
-                 filter(ws.x!=0 & ws.y!=0) %>%
-                 filter(wd.y < wd.x + 11.25 & wd.y > wd.x - 11.25)
+joined_events <- inner_join(filter(events, tag=="UW"),
+                            filter(events, tag=="DW"), 
+                            by=c("datetime", "dca.group"))
 
 clean_events <- joined_events %>% 
                 group_by(data.id.x) %>%
                 select(datetime, dca.group,
-                       ws.uw=ws.x, wd.uw=wd.x, pm10.uw=pm10.avg.x, 
-                       ws.dw=ws.y, wd.dw=wd.y, pm10.dw=pm10.avg.y) %>%
-                mutate(day=lubridate::day(datetime), 
-                       ws.avg=mean(c(ws.uw, ws.dw)), 
-                       wd.avg=mean(c(wd.uw, wd.dw))) %>%
+                       teom.uw=deployment.x, ws.uw=ws.x, wd.uw=wd.x, 
+                       pm10.uw=pm10.avg.x, 
+                       teom.dw=deployment.y, ws.dw=ws.y, wd.dw=wd.y, 
+                       pm10.dw=pm10.avg.y) %>%
+                mutate(day=lubridate::day(datetime)) %>%
+                filter(ws.uw!=0,  ws.dw!=0) %>%
                ungroup() 
 
 print(
-ggplot(filter(clean_events, dca.group=="north (T29)"), aes(wd.avg)) +
+ggplot(filter(clean_events, dca.group=="north (T29)"), aes(wd.uw)) +
   geom_histogram()
 )
 
 print(
-ggplot(filter(clean_events, dca.group=="central (T12)"), aes(wd.avg)) +
+ggplot(filter(clean_events, dca.group=="central (T12)"), aes(wd.uw)) +
   geom_histogram()
 )
 
 print(
-ggplot(filter(clean_events, dca.group=="south (T2 & T3)"), aes(wd.avg)) +
+ggplot(filter(clean_events, dca.group=="south (T2 & T3)"), aes(wd.uw)) +
   geom_histogram()
 )
 
@@ -51,6 +51,13 @@ daily_summary <- clean_events %>% group_by(day, dca.group) %>%
   summarize(daily.pm10.uw=sum(pm10.uw)/24, daily.pm10.dw=sum(pm10.dw)/24) %>%
   mutate(pm10.delta=daily.pm10.dw - daily.pm10.uw) %>%
   ungroup()
+
+write.csv(daily_summary, 
+          file="./output/twb2_wind_events_daily_summary_dec2015.csv",
+          row.names=F)
+write.csv(clean_events, 
+          file="./output/twb2_wind_events_hourly_events_dec2015.csv",
+          row.names=F)
 
 # plots of relevant DCA groups with associated teoms and upwind angles
 north_group <-c("T29-3", "T29-4")

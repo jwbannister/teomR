@@ -56,30 +56,37 @@ df1
 #' direction for the associated teom. 
 define_event <- function(df1, locs){
   return_df <- df1
+  return_df$tag <- rep(NA, nrow(return_df))
   return_df <- return_df[numeric(0), ]
   for (i in 1:nrow(locs)){
-    angle <- locs$upwind.angle[i]
-    upper.angle <- angle + 11.25
-    upper.angle.alt <- upper.angle-360 
-    lower.angle <- angle - 11.25
-    lower.angle.alt <- lower.angle+360
-    if (upper.angle>360){
-      if (lower.angle<0){
-        events <- dplyr::filter(df1, deployment.id==locs$deployment.id[i],
-                                (wd>lower.angle.alt&wd<360) |
-                                  (wd>0&wd<upper.angle))
-      }else {
-        events <- dplyr::filter(df1, deployment.id==locs$deployment.id[i],
-                                (wd>lower.angle&wd<360) |
-                                  (wd>0&wd<upper.angle.alt))
-      }
-    }else {
-      events <- dplyr::filter(df1, deployment.id==locs$deployment.id[i],
-                              wd>lower.angle&wd<upper.angle)
-    }
-    return_df <- rbind(return_df, events)
+    a <- filter_by_angle(df1, locs$deployment.id[i], locs$upwind.angle[i], 
+                         "UW")
+    b <- filter_by_angle(df1, locs$deployment.id[i], locs$downwind.angle[i], 
+                         "DW")
+    return_df <- rbind(return_df, a, b)
   }
   return_df
 }
 
-
+filter_by_angle <- function(df1, id, angle, tag){
+  upper.angle <- angle + 11.25
+  upper.angle.alt <- upper.angle-360 
+  lower.angle <- angle - 11.25
+  lower.angle.alt <- lower.angle+360
+  if (upper.angle>360){
+    if (lower.angle<0){
+      events <- dplyr::filter(df1, deployment.id==id,
+                              (wd>lower.angle.alt&wd<360) |
+                                (wd>0&wd<upper.angle))
+    }else {
+      events <- dplyr::filter(df1, deployment.id==id,
+                              (wd>lower.angle&wd<360) |
+                                (wd>0&wd<upper.angle.alt))
+    }
+  }else {
+    events <- dplyr::filter(df1, deployment.id==id,
+                            wd>lower.angle&wd<upper.angle)
+  }
+  events$tag <- rep(tag, nrow(events))
+  events
+}
