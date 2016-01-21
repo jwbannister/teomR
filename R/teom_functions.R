@@ -29,9 +29,9 @@ pair_teoms <- function(df1){
 
 assign_wind_angle <- function(df1){
   df1 <- group_by(df1, dca.group) %>% 
-    mutate(position = ifelse(northing.utm==max(northing.utm), "N", "S")) %>%
+    mutate(position = ifelse(y==max(y), "N", "S")) %>%
     arrange(desc(position)) %>%
-    mutate(alpha = atan(diff(easting.utm)/diff(northing.utm))) %>% 
+    mutate(alpha = atan(diff(x)/diff(y))) %>% 
     mutate(alpha = ifelse(alpha>0, alpha, 2*pi+alpha)) %>%
     mutate(upwind.angle = ifelse(position=="N", alpha, alpha-pi)) %>%
     mutate(upwind.angle = ifelse(upwind.angle>0, upwind.angle, 

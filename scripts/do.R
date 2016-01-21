@@ -1,4 +1,4 @@
-# explore.R -- Initial work on paired teoms for upwind/downwind PM11
+# do.R -- Initial work on paired teoms for upwind/downwind PM11
 # John Bannister
 # Created 01/14/2016 -- see git for revision history
 # 
@@ -10,8 +10,7 @@ library(ggplot2)
 load("./data-clean/teom_data.RData")
 teom_locs <- pair_teoms(teom_locs)
 teom_locs <- assign_wind_angle(teom_locs)
-teom_locs <- rename(teom_locs, x=easting.utm, y=northing.utm)
-df1 <- inner_join(teom_data, select(teom_locs, deployment.id, deployment, 
+df1 <- inner_join(teom_data, select(teom_locs, deployment.id, 
                                           dca.group, position),
                         by="deployment.id")
 
