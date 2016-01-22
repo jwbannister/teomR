@@ -9,13 +9,14 @@ teom_df <- teom_df[teom_df$qaqc_level_id==0, ]
 teom_df <- select(teom_df, data.id = teom_summary_data_id, datetime, 
                   deployment.id = deployment_id, wd, ws)
 teom_df <- filter(teom_df, deployment.id!=8)
+teom_df$pm10.avg <- rep(NA, nrow(teom_df))
 
 # pull data from m-files for T7 teom, keep wind direction and speed
 print("pulling m-file...")
 mfile <- query_owenslake("SELECT * FROM archive.mfile_data WHERE datetime > timestamp '2015-12-01 00:00:00' AND datetime < timestamp '2016-01-01 00:00:00' AND site = 'T7'")
 mfile <- mfile[is.na(mfile$qaqc_level_id), ]
 mfile <- select(mfile, data.id = did, datetime, deployment.id = deployment_id, 
-                wd = dir, ws = aspd)
+                wd = dir, ws = aspd, pm10.avg=teom)
 
 wind_data <- rbind(teom_df, mfile)
 
@@ -39,6 +40,13 @@ compliance_df <- filter(compliance_df, pm10.avg > -35)
 
 teom_data <- left_join(wind_data, compliance_df, by=c("datetime"="datetime_hour",
                                                  "deployment"))
+combine_pm10 <- reshape2::melt(data.frame(data.id=teom_data$data.id, x=teom_data$pm10.avg.x, 
+                                  y=teom_data$pm10.avg.y), id.var="data.id",
+                               value.name="pm10.avg", na.rm=TRUE) %>%
+                select(-variable)
+teom_data <- teom_data %>% select(-pm10.avg.x, -pm10.avg.y) %>%
+             inner_join(combine_pm10, by="data.id")
 
 save(teom_data, teom_locs, file="./data-clean/teom_data.RData")
+
 
