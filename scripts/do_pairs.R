@@ -50,7 +50,7 @@ write.csv(clean_events,
 north_group <-c("T29-3", "T29-4")
 central_group <- c("T12-1")
 south_group <- c("T3SW", "T3SE", "T2-2", "T2-3", "T2-4", "T5-4")
-basemap <- brick("~/dropbox/gis/owens/owens_20151111_30prcnt.tif")
+basemap <- raster::brick("~/dropbox/gis/owens/owens_20151111_30prcnt.tif")
 maprgb <- RStoolbox::ggRGB(basemap)
 p_north <- plot_owens_borders(dcas=north_group) +
            geom_point(data=filter(teom_locs, dca.group=="north (T29)"), 
