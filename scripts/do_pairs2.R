@@ -6,14 +6,7 @@ devtools::load_all("../Rowens")
 devtools::load_all()
 library(dplyr)
 library(ggplot2)
-report_month <- 1 # SET THIS FOR MONTH TO SUMMARIZE
-report_year <- 2016 # SET THIS FOR YEAR TO SUMMARIZE
-month2 <- sprintf("%02d", report_month)
-month2plus1 <- sprintf("%02d", report_month+1)
-dat <- paste0(report_year, "-", month2, "-01")
-month_char <- lubridate::month(lubridate::ymd(dat), label=TRUE, abbr=FALSE)
-load(paste0("./data-clean/twb2_paired_teom_data_", tolower(month_char), report_year, 
-            ".RData"))
+load("./data-clean/teom_data.RData")
 teom_locs <- pair_teoms(teom_locs)
 teom_locs <- assign_wind_angle(teom_locs)
 df1 <- inner_join(teom_data, dplyr::select(teom_locs, deployment.id, 
@@ -27,9 +20,9 @@ clean_events <- joined_events %>%
   group_by(data.id.x) %>%
   dplyr::select(datetime, dca.group,
                 teom.uw=deployment.x, ws.uw=ws.x, wd.uw=wd.x, 
-                pm10.uw=pm10.avg.x, 
+                pm10.uw=pm10.x, 
                 teom.dw=deployment.y, ws.dw=ws.y, wd.dw=wd.y, 
-                pm10.dw=pm10.avg.y) %>%
+                pm10.dw=pm10.y) %>%
   mutate(day=lubridate::day(datetime),
          ws.avg=mean(c(ws.uw, ws.dw))) %>%
   filter(ws.uw!=0,  ws.dw!=0) %>% arrange(datetime) %>%
@@ -53,6 +46,16 @@ write.csv(clean_events,
 
 filter(daily_summary, pm10.delta > 10)
 max(daily_summary$pm10.delta)
+
+  twb2_dcas <- list("north (T29)" = c("T29-3", "T29-4"),
+                    "central (T12)" = c("T12-1"),
+                    "south (T2 & T3)" = c("T3SW", "T3SE", "T2-2", "T2-3", 
+                                          "T2-4", "T5-4"))
+sub_locs <- filter(teom_locs, dca.group==names(twb2_dcas)[1])
+p1 <- teom_pair_plots(teom_locs=sub_locs, 
+                      df1=df1[complete.cases(df1), ], 
+                      dcas=twb2_dcas[names(twb2_dcas)==
+                                     sub_locs$dca.group[1]][[1]])
 
 teom_pair_png_plots(teom_locs, df1)
 

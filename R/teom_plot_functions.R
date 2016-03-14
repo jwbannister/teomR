@@ -4,6 +4,75 @@
 
 #' Plot paired TEOMS with wind roses.
 #' 
+#' @param teom_locs Data frame. TEOMS with pairs grouping in *dca.group* column.
+#' @param df1 Data frame. Hourly PM10 data.
+#' @return 3 PNG files of plots in **output** subdirectory of working directory.
+teom_pair_plots <- function(teom_locs, df1, dcas){
+    a <- list(grobs=c(), centers=c())
+    maxpm10 <- max(filter(df1, dca.group==sub_locs$dca.group[1])$pm10)
+    valueseq <- c(10, 50, 150, 500)
+    legend.plot <- df1 %>% filter(dca.group==sub_locs$dca.group[1]) %>%
+      plot_rose(., value='pm10', dir='wd', valueseq=valueseq,
+                legend.title="PM10")
+    legnd <- g_legend(legend.plot)
+    for (j in 1:2){
+      p <- filter(df1, deployment==sub_locs$deployment[j]) %>% 
+        plot_rose_image_only(., value='pm10', dir='wd', valueseq=valueseq)
+      png(filename="./output/p.png", bg="transparent")
+      print(p)
+      dev.off()
+      img <- png::readPNG("./output/p.png")
+      ras <- grid::rasterGrob(img, interpolate=TRUE)
+      a$grobs[[j]] <- ras
+      a$centers[[j]] <- c(sub_locs$x[j], sub_locs$y[j])
+    }
+    p2 <- plot_owens_borders(dcas) + 
+      theme(axis.line=element_blank(),
+            axis.text.x=element_blank(),
+            axis.text.y=element_blank(),
+            axis.ticks=element_blank(),
+            axis.title.x=element_blank(),
+            axis.title.y=element_blank(),
+            legend.position="none",
+            panel.background=element_blank(),
+            panel.border=element_blank(),
+            panel.grid.major=element_blank(),
+            panel.grid.minor=element_blank(),
+            plot.background=element_blank())
+    info <- ggplot_build(p2)
+    dca_xrange <- info[[2]]$ranges[[1]]$x.range
+    plot_xrange <- c(min(dca_xrange, a$centers[[1]][1], a$centers[[2]][1]),
+                     max(dca_xrange, a$centers[[1]][1], a$centers[[2]][1]))
+    dca_yrange <- info[[2]]$ranges[[1]]$y.range
+    plot_yrange <- c(min(dca_yrange, a$centers[[1]][2], a$centers[[2]][2]),
+                     max(dca_yrange, a$centers[[1]][2], a$centers[[2]][2]))
+    maxspan <- max(c(plot_xrange[2] - plot_xrange[1], 
+                     plot_yrange[2] - plot_yrange[1]))
+    midpoint <- c(mean(plot_xrange), mean(plot_yrange))
+    buffer <- maxspan / 10
+    xrange <- c(midpoint[1] - (maxspan/2) - buffer, 
+                midpoint[1] + (maxspan/2) + buffer)
+    yrange <- c(midpoint[2] - (maxspan/2) - buffer, 
+                midpoint[2] + (maxspan/2) + buffer)
+    p3 <- p2 + xlim(xrange[1], xrange[2]) + ylim(yrange[1], yrange[2]) +
+      annotation_custom(a$grobs[[1]], xmin=a$centers[[1]][1] - 2*buffer,
+                        xmax=a$centers[[1]][1] + 2*buffer, 
+                        ymin=a$centers[[1]][2] - 2*buffer,
+                        ymax=a$centers[[1]][2] + 2*buffer) +
+annotation_custom(a$grobs[[2]], xmin=a$centers[[2]][1] - 2*buffer,
+                  xmax=a$centers[[2]][1] + 2*buffer, 
+                  ymin=a$centers[[2]][2] - 2*buffer,
+                  ymax=a$centers[[2]][2] + 2*buffer) +
+annotation_custom(legnd, xmin=xrange[2] - buffer, xmax=xrange[2],
+                  ymin = yrange[1] + buffer, ymax=yrange[1] + buffer) +
+geom_label(data=sub_locs, mapping=aes(x=x, y=y, label=deployment), 
+           nudge_x=1.5*buffer)
+file.remove("./output/p.png")
+p3
+}
+
+#' Plot paired TEOMS with wind roses.
+#' 
 #' Created multiple 3 PNG files (1 for each TwB2 TEOM pair, showing TwB2 areas, 
 #' locations of TEOMS, and wind roses for time period. Function is specific to 
 #' data as generated in teom_pairs_do.R file.
@@ -19,15 +88,15 @@ teom_pair_png_plots <- function(teom_locs, df1){
   for (i in 1:3){
     sub_locs <- filter(teom_locs, dca.group==names(twb2_dcas)[i])
     a <- list(grobs=c(), centers=c())
-    maxpm10 <- max(filter(df1, dca.group==sub_locs$dca.group[1])$pm10.avg)
+    maxpm10 <- max(filter(df1, dca.group==sub_locs$dca.group[1])$pm10)
     valueseq <- c(10, 50, 150, 500)
     legend.plot <- df1 %>% filter(dca.group==sub_locs$dca.group[1]) %>%
-      plot_rose(., value='pm10.avg', dir='wd', valueseq=valueseq,
+      plot_rose(., value='pm10', dir='wd', valueseq=valueseq,
                 legend.title="PM10")
     legnd <- g_legend(legend.plot)
     for (j in 1:2){
       p <- filter(df1, deployment==sub_locs$deployment[j]) %>% 
-        plot_rose_image_only(., value='pm10.avg', dir='wd', valueseq=valueseq)
+        plot_rose_image_only(., value='pm10', dir='wd', valueseq=valueseq)
       png(filename="./output/p.png", bg="transparent")
       print(p)
       dev.off()
