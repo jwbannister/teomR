@@ -39,6 +39,13 @@ daily_summary <- clean_events %>% group_by(day, dca.group) %>%
   mutate(pm10.delta=daily.pm10.dw - daily.pm10.uw) %>%
   ungroup()
 
+daily_summary_mean <- clean_events %>% group_by(day, dca.group) %>%
+  summarize(daily.pm10.uw=mean(pm10.uw), daily.pm10.dw=mean(pm10.dw),
+# convert wind speed from mph to m/s
+            ws.avg.mps=mean(c(ws.uw, ws.dw))*.44704) %>%
+  mutate(pm10.delta=daily.pm10.dw - daily.pm10.uw) %>%
+  ungroup()
+
 write.csv(daily_summary, 
           file="./output/twb2_wind_events_daily_summary_dec2015.csv",
           row.names=F)
@@ -50,15 +57,16 @@ write.csv(clean_events,
 north_group <-c("T29-3", "T29-4")
 central_group <- c("T12-1")
 south_group <- c("T3SW", "T3SE", "T2-2", "T2-3", "T2-4", "T5-4")
-basemap <- brick("~/dropbox/gis/owens/owens_20151111_30prcnt.tif")
-maprgb <- RStoolbox::ggRGB(basemap)
+#basemap <- raster::brick("~/dropbox/gis/owens/owens_20151111.tif")
+#maprgb <- RStoolbox::ggRGB(basemap)
+#maprgb_layer <- RStoolbox::ggRGB(basemap, ggLayer=TRUE)
 p_north <- plot_owens_borders(dcas=north_group) +
            geom_point(data=filter(teom_locs, dca.group=="north (T29)"), 
                       mapping=aes(x=x, y=y)) +
            geom_label(data=filter(teom_locs, dca.group=="north (T29)"), 
                       mapping=aes(x=x, y=y, label=deployment),
                       nudge_x=125) 
-
+           
 north_blank <- p_north + theme(axis.line=element_blank(),
                                axis.text.x=element_blank(),
                                axis.text.y=element_blank(),
@@ -72,3 +80,10 @@ north_blank <- p_north + theme(axis.line=element_blank(),
                                panel.grid.minor=element_blank(),
                                plot.background=element_blank())
 
+point_data <- filter(teom_locs, dca.group=="north (T29)")
+north_plt <- ggplot(dcas_polys, aes(x=x, y=y)) +
+  geom_path(aes(group=id)) +
+  geom_text(data=dcas_labels, mapping=aes(x=X1, y=X2, label=label)) +
+  geom_point(data=point_data, mapping=aes(x=x, y=y)) +
+  geom_label(data=point_data, mapping=aes(x=x, y=y, label=deployment),
+             nudge_x=125)
