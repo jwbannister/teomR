@@ -7,7 +7,7 @@
 #' 
 #' This function is specific to pairing teoms in TwB2 upwind/downwind analysis.
 #' 
-#' @import magrittr
+#' @import dplyr
 #' @param df1 Data frame. Teoms under consideration.
 #' @return Input data frame with added column listing relevant DCA for paired 
 #' TEOMS. 
@@ -27,6 +27,15 @@ pair_teoms <- function(df1){
   df1
 }
 
+#' Assign upwind/downwind angles for TEOM pair
+#' 
+#' @import dplyr
+#' @param df1 Data frame containing TEOM pairs. Locations or each TEOM in *x* & 
+#' *y* columns, matched pairs assigned group in *dca.group* column, each TEOM  
+#' has unique identifier in *deployment.id* column, "N" or "S" position in 
+#' *position* column. 
+#' @return Original data frame with *upwind.angle* and *downwind.angle* columns 
+#' addded.
 assign_wind_angle <- function(df1){
   df1 <- group_by(df1, dca.group) %>% 
     mutate(position = ifelse(y==max(y), "N", "S")) %>%
@@ -49,7 +58,7 @@ df1
 
 #' Filter hourly data by wind direction.
 #' 
-#' @import magrittr
+#' @import dplyr
 #' @param df1 Data frame. Data for teoms under consideration.
 #' @param locs Data frame. List of teoms with relevant upwind direction.
 #' @return Data frame containing only those hours that are in an upwind 
