@@ -57,7 +57,6 @@ p1 <- teom_pair_plots(teom_locs=sub_locs,
                       dcas=twb2_dcas[names(twb2_dcas)==
                                      sub_locs$dca.group[1]][[1]])
 
-teom_pair_png_plots(teom_locs, df1)
 
 df_uw <- df1 %>% select(datetime, dca.group, pm10.avg,
                                  pm10=pm10.uw, ws.avg)
