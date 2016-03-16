@@ -25,6 +25,12 @@ teom_data <- inner_join(df1, select(teom_locs, deployment.id, deployment),
 
 missing_data <- find_missing(teom_data)
 
+twb2_dcas <- list("north (T29)" = c("T29-3", "T29-4"),
+                  "central (T12)" = c("T12-1"),
+                  "south (T2 & T3)" = c("T3SW", "T3SE", "T2-2", "T2-3", 
+                                        "T2-4", "T5-4"))
+
 save(teom_data, teom_locs, file="./data-clean/teom_data.RData")
+save(twb2_dcas, file="./data/tbw2_dcas.RData")
 
 
