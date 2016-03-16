@@ -1,0 +1,72 @@
+---
+author: "John Bannister"
+date: "March 16, 2016"
+output: html_document
+---
+```{r, echo=FALSE}
+date1 <- "2016-02-01"
+date2 <- "2016-03-01"
+today.date <- lubridate::today()
+date.label <- paste0(lubridate::month(today.date, label=TRUE, abbr=FALSE),
+                     " ", lubridate::day(today.date),
+                     ", ", lubridate::year(today.date))
+```
+# **TwB2 Paired TEOMs Report - `r lubridate::month(date1, label=TRUE, abbr=FALSE)`, `r lubridate::year(date1)`**
+### Author: John Bannister, Air Sciences Inc.
+### Date: `r date.label` 
+```{r, echo=FALSE, message=FALSE}
+devtools::load_all()
+devtools::load_all("~/analysis/Rowens")
+library(dplyr)
+```
+```{r, echo=FALSE, results='hide'}
+teom_met <- pull_teom_wind(date1, date2)
+mfile <- pull_mfile(date1, date2)
+df1 <- rbind(teom_met, mfile)
+deploys <- as.character(unique(df1$deployment.id))
+teom_locs <- pull_locations(deploys)
+pm10_df <- pull_pm10(date1, date2, deploys)
+teom_data <- inner_join(df1, select(teom_locs, deployment.id, deployment),
+                        by="deployment.id") %>%
+  left_join(pm10_df, by=c("datetime"="datetime_hour", "deployment")) %>%
+  mutate(pm10 = ifelse(is.na(pm10.avg.x), pm10.avg.y, pm10.avg.x)) %>%
+  select(-pm10.avg.x, -pm10.avg.y) 
+teom_locs <- pair_teoms(teom_locs)
+teom_locs <- assign_wind_angle(teom_locs)
+df1 <- inner_join(teom_data, select(teom_locs, deployment.id, dca.group, position), by="deployment.id")
+events <- define_event(df1, teom_locs)
+joined_events <- inner_join(filter(events, tag=="UW"), filter(events, tag=="DW"), by=c("datetime", "dca.group"))
+clean_events <- joined_events %>% 
+  group_by(data.id.x) %>%
+  dplyr::select(datetime, dca.group,
+                teom.uw=deployment.x, ws.uw=ws.x, wd.uw=wd.x, 
+                pm10.uw=pm10.x, 
+                teom.dw=deployment.y, ws.dw=ws.y, wd.dw=wd.y, 
+                pm10.dw=pm10.y) %>%
+  mutate(day=lubridate::day(datetime),
+         ws.avg=mean(c(ws.uw, ws.dw))) %>%
+  filter(ws.uw!=0,  ws.dw!=0) %>% arrange(datetime) %>%
+  ungroup()
+num.events <- nrow(clean_events)
+daily_summary <- clean_events %>% group_by(day, dca.group) %>%
+  summarize(daily.pm10.uw=sum(pm10.uw)/24, daily.pm10.dw=sum(pm10.dw)/24,
+            # convert wind speed from mph to m/s
+            ws.avg.mps=mean(c(ws.uw, ws.dw))*.44704) %>%
+mutate(pm10.delta=daily.pm10.dw - daily.pm10.uw) %>% ungroup()
+daily_summary[ , 3:6] <- round(daily_summary[ , 3:6], 1)
+num.days <- length(unique(daily_summary$day))
+```
+As required by Attachment C of the Stipulated Judgment: Protocol for Monitoring and Enforcing Owens Lake Tillage with BACM Backup (Judgment Protocol), PM10 emissions during wind events crossing the Tillage with BACM Backup (TwB2) areas were analyzed for the month of `r lubridate::month(date1, label=TRUE, abbr=FALSE)` `r lubridate::year(date1)`. As specified in the Judgment Protocol, PM10 emissions were compared between paired upwind and downwind TEOMs associated with each TwB2 area. During the time frame considered, there were a total of `r num.events` hours during which the average wind direction was between TEOM pairs (and across the associated treatment area).  
+```{r, echo=FALSE}
+num.10 <- nrow(filter(daily_summary, pm10.delta>10))
+num.50 <- nrow(filter(daily_summary, pm10.delta>50)) 
+```
+The `r num.events` events correspond to `r num.days` days during the month of `r lubridate::month(date1, label=TRUE, abbr=FALSE)` for which daily upwind and daily downwind PM10 averages could be calculated. Of these `r num.days` days for which there is relevant data, on only `r num.10` day(s) did a TEOM pair group register a difference between the downwind and upwind daily PM10 (ΔPM10) greater than 10 μg/m3 (See Table 1). There were `r num.50` day(s) in `r lubridate::month(date1, label=TRUE, abbr=FALSE)` `r lubridate::year(date1)` when the increase in PM10 concentration across any TwB2 area exceed the maintenance trigger limit of 50 μg/m3 as specified in the Judgment Protocol.
+```{r, echo=FALSE}
+tbl <- filter(daily_summary, pm10.delta>10) %>% 
+  rename("Day of Month"=day, "TwB2 Area"=dca.group, "Average Wind Speed"=ws.avg.mps, 
+         "Upwind PM10"=daily.pm10.uw, "Downwind PM10"=daily.pm10.dw, 
+         "PM10 Increase"=pm10.delta)
+knitr::kable(tbl, align='c', caption="Table 1 - PM10 increases across TwB2 areas > 10")
+```
+

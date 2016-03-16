@@ -1,4 +1,4 @@
-# do_pairs3.R -- Initial work on paired teoms for upwind/downwind PM11
+# do_pairs.R -- Initial work on paired teoms for upwind/downwind PM11
 # John Bannister
 # Created 01/14/2016 -- see git for revision history
 # 
