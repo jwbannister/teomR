@@ -1,12 +1,39 @@
-# do_pairs.R -- Initial work on paired teoms for upwind/downwind PM11
+# twb2_pairs.R -- PM10 differences across TwB2 areas.
 # John Bannister
-# Created 01/14/2016 -- see git for revision history
 # 
-devtools::load_all("../Rowens")
-devtools::load_all()
+load_all()
+load_all("../Rowens")
 library(dplyr)
 library(ggplot2)
-load("./data-clean/teom_data.RData")
+
+start.date <- "2016-03-01"
+end.date <- "2016-03-15"
+
+# pull data from portable teoms, keep wind direction and speed
+teom_met <- pull_teom_wind(start.date, end.date)
+# pull data from m-files for T7 teom, keep wind direction and speed
+mfile <- pull_mfile_wind(start.date, end.date)
+
+df1 <- rbind(teom_met, mfile)
+
+deploys <- as.character(unique(df1$deployment.id))
+teom_locs <- pull_locations(deploys)
+
+pm10_df <- pull_pm10(start.date, end.date, deploys)
+
+teom_data <- inner_join(df1, select(teom_locs, deployment.id, deployment),
+                  by="deployment.id") %>%
+  left_join(pm10_df, by=c("datetime"="datetime_hour", "deployment")) %>%
+  mutate(pm10 = ifelse(is.na(pm10.avg.x), pm10.avg.y, pm10.avg.x)) %>%
+  select(-pm10.avg.x, -pm10.avg.y) 
+
+missing_data <- find_missing(teom_data)
+
+twb2_dcas <- list("north (T29)" = c("T29-3", "T29-4"),
+                  "central (T12)" = c("T12-1"),
+                  "south (T2 & T3)" = c("T3SW", "T3SE", "T2-2", "T2-3", 
+                                        "T2-4", "T5-4"))
+
 teom_locs <- pair_teoms(teom_locs)
 teom_locs <- assign_wind_angle(teom_locs)
 # df1 == all available hourly data from teoms

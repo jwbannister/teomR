@@ -43,8 +43,8 @@ pull_teom_wind <- function(date1, date2){
 #' @param date1, date2 Text string. Date range for which to pull data.
 #' @return Data frame.
 #' @examples
-#' pull_mfile("2016-02-01", "2016-03-01")
-pull_mfile <- function(date1, date2){
+#' pull_mfile_wind("2016-02-01", "2016-03-01")
+pull_mfile_wind<- function(date1, date2){
   print("pulling wind and pm10 data from archive.mfile_data...")
   mfile_df <- 
     query_owenslake(paste0("SELECT did, datetime, deployment_id, dir, aspd, 

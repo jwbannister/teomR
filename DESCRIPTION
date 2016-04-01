@@ -1,7 +1,7 @@
 Package: teomR
 Title: Compare PM10 levels for TEOM pairs spanning TwB2 dust control areas
 Version: 0.0.0.9000
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
+Authors: John Bannister 
 Description: Takes pairs of TEOMS which span dust control areas, looks for wind
     events which blow directly between TEOMS, and compares upwind and downwind PM10
     levels for the wind event.
